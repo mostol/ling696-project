@@ -80,7 +80,7 @@ delightful_tts_config = DelightfulTTSConfig(
 -    num_loader_workers=10,
 -    num_eval_loader_workers=10,
 -    precompute_num_workers=10,
-+    # Coqui warned that my system was onyl able to use 1 worker, so I lowered all these values.
++    # Coqui warned that my system was only able to use 1 worker, so I lowered all these values.
 +    num_loader_workers=1,
 +    num_eval_loader_workers=1,
 +    precompute_num_workers=1,
