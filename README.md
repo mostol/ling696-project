@@ -73,8 +73,10 @@ delightful_tts_config = DelightfulTTSConfig(
     audio=audio_config,
     vocoder=vocoder_config,
 -    batch_size=32,
-+    batch_size=16, # 32-sample batches were too big to even start straining on, so I switched to 16.
-    eval_batch_size=16,
++    # 32-sample batches were too big to even start training on, 
++    # and 16-sample ones led to out-of-memory errors at evaluation time.
++    batch_size=8, 
+    eval_batch_size=8,
 -    num_loader_workers=10,
 -    num_eval_loader_workers=10,
 -    precompute_num_workers=10,
@@ -114,9 +116,9 @@ delightful_tts_config = DelightfulTTSConfig(
 -    lr=4e-1,
 -    lr_disc=4e-1,
 +    # These learning rates were *incredibly* high and would instanntly lead to vanishing gradients unless lowered.
-+    lr_gen=4e-1,
-+    lr=4e-1,
-+    lr_disc=4e-1,
++    lr_gen=4e-4,
++    lr=4e-4,
++    lr_disc=4e-4,
 -    max_text_len=130, # I wasn't sure about the max text length, so I left it unspecified.
 )
 
@@ -176,10 +178,21 @@ trainer = Trainer(
 )
 ```
 
-This required setting up a new container image:
-<container image here>
+### Learning rate impact
+With the above settings applied, the models were ready to train. While monitoring their progress, however, I noticed a consistent issue: after a few epochs, the models' loss would reach `nan` and either fail to improve for the remainder of training or cause session-ending errors. After further investigation, I noticed that, while I had set the learning rate low enough to avoid instant failure, the learning rate seemed to stay fixed as the model trained. With a fixed learning rate, the models were unable to improve their loss past a certain point because "overshoot" the weight updates needed to improve, and this continual overcorrection can eventually accumulate and spiral out of control.
+
+Because of Coqui's default settings, this problem may not be seen in all cases. Coqui sets `scheduler_after_epoch` to `True` by default—this tells the trainer to update the learning rate *after each epoch*. An epoch is a single iteration over the entire dataset, so with smaller datasets, the learning rate will generally be adjusted before it becomes an issue. But when training on the entire Dutch Common Voice dataset (and with this particular combination of model architecture and training hardware) the distance between learning rate updates becomes long enough that the weight update step has the possibility of adjusting the weights to irrecoverably large or small values. Fortunately, this issue can be remedied by simply adjusting `scheduler_after_epoch` to `False`:
+```diff
+delightful_tts_config = DelightfulTTSConfig(
+    # ...
+    # ...
+    lr_gen=4e-4,
+    lr=4e-4,
+    lr_disc=4e-4,
++    scheduler_after_epoch=False,
+)
+```
+this will allow the trainer to continually update the learning rate instead of waiting until the end of each epoch. Changing this configuration setting enabled the models to consistently finish their training loops and avoid `nan` losses.
 
 ## Results
-(Needed to fork the repository to make some fixes before I could do inference)
-
 The two models are essentially indistinguishable.
