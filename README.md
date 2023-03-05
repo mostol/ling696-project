@@ -27,7 +27,7 @@ From: python:3.9
 
 ## Parameters and training approaches
 My training script was based of of an [existing DelightfulTTS recipe](https://github.com/coqui-ai/TTS/blob/delightful-tts/recipes/ljspeech/delightful_tts/train_delightful_tts.py) for the `ljspeech` dataset, with some modifications. Since my primary point of comparison was intended to be single- vs. multi-speaker setups, I tried to keep other parameters consistent between the two models and to select optimal configurations:
-* Rather than using a character-based configuration, I used phonemes by taking advantage of `gruut`'s Dutch phoneme selection. This required installing an extension to the `gruut` package.
+* Rather than using a character-based configuration, I used phonemes by taking advantage of `gruut`'s Dutch phoneme selection. This required installing an extension to the `gruut` package. My assumption was that using phonemes would allow the model to learn better speech generation more quickly by providing it a more unified speech representation—if the model uses phonemes, it doesn't have to learn to navigate the additinal variability that stems from trying to map orthography to pronunciation.
 * For the dataset, I used the `validated.tsv` Common Voice data directly and leveraged Coqui's built-in `common_voice` dataset formatter for convenience and consistency.
 * To ensure *ample* opportunity to produce the best model possible, I configured training to run for 100 epochs. Larger datsets often need fewer epochs—and in fact, these models converged and hit their maximum validation set performance well before they reached 100 epochs.
 
@@ -74,9 +74,8 @@ delightful_tts_config = DelightfulTTSConfig(
     vocoder=vocoder_config,
 -    batch_size=32,
 +    # 32-sample batches were too big to even start training on, 
-+    # and 16-sample ones led to out-of-memory errors at evaluation time.
-+    batch_size=8, 
-    eval_batch_size=8,
++    batch_size=16, 
++    eval_batch_size=16,
 -    num_loader_workers=10,
 -    num_eval_loader_workers=10,
 -    precompute_num_workers=10,
@@ -115,7 +114,7 @@ delightful_tts_config = DelightfulTTSConfig(
 -    lr_gen=4e-1,
 -    lr=4e-1,
 -    lr_disc=4e-1,
-+    # These learning rates were *incredibly* high and would instantly lead to vanishing gradients unless lowered.
++    # These learning rates were *incredibly* high and would instantly lead to errors unless lowered.
 +    lr_gen=4e-4,
 +    lr=4e-4,
 +    lr_disc=4e-4,
