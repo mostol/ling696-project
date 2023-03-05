@@ -179,9 +179,9 @@ trainer = Trainer(
 ```
 
 ### Learning rate impact
-With the above settings applied, the models were ready to train. While monitoring their progress, however, I noticed a consistent issue: after a few epochs, the models' loss would reach `nan` and either fail to improve for the remainder of training or cause session-ending errors. After further investigation, I noticed that, while I had set the learning rate low enough to avoid instant failure, the learning rate seemed to stay fixed as the model trained. With a fixed learning rate, the models were unable to improve their loss past a certain point because "overshoot" the weight updates needed to improve, and this continual overcorrection can eventually accumulate and spiral out of control.
+With the above settings applied, the models were ready to train. While monitoring their progress, however, I noticed a consistent issue: after a few epochs, the models' loss would reach `nan` and either fail to improve for the remainder of training or cause session-ending errors. After further investigation, I noticed that, while I had set the learning rate low enough to avoid instant failure, the learning rate seemed to stay fixed as the model trained. With a fixed learning rate, the models were unable to improve their loss past a certain point because they would "overshoot" the weight updates needed to reduce their loss, and this continual overcorrection would eventually accumulate and spiral out of control.
 
-Because of Coqui's default settings, this problem may not be seen in all cases. Coqui sets `scheduler_after_epoch` to `True` by default—this tells the trainer to update the learning rate *after each epoch*. An epoch is a single iteration over the entire dataset, so with smaller datasets, the learning rate will generally be adjusted before it becomes an issue. But when training on the entire Dutch Common Voice dataset (and with this particular combination of model architecture and training hardware) the distance between learning rate updates becomes long enough that the weight update step has the possibility of adjusting the weights to irrecoverably large or small values. Fortunately, this issue can be remedied by simply adjusting `scheduler_after_epoch` to `False`:
+Because of Coqui's default settings, this problem may not be seen in all cases. Coqui sets `scheduler_after_epoch` to `True` by default—this tells the trainer to update the learning rate *after each epoch*. An epoch is a single iteration over the entire dataset, so with smaller datasets, the learning rate will generally be adjusted before it becomes an issue. But when training on the entire Dutch Common Voice dataset (and with this particular combination of model architecture and training hardware) the distance between learning rate updates becomes long enough that the weight update step has the possibility of adjusting the weights to irrecoverably large or small values. Fortunately, this issue can be addressed by simply adjusting `scheduler_after_epoch` to `False`:
 ```diff
 delightful_tts_config = DelightfulTTSConfig(
     # ...
@@ -192,7 +192,7 @@ delightful_tts_config = DelightfulTTSConfig(
 +    scheduler_after_epoch=False,
 )
 ```
-this will allow the trainer to continually update the learning rate instead of waiting until the end of each epoch. Changing this configuration setting enabled the models to consistently finish their training loops and avoid `nan` losses.
+this will allow the trainer to continually update the learning rate instead of waiting until the end of each epoch. Because this seemed to make a significant impact on model performance, I decided to include an "epoch-scheduled" variation of the model among my comparison of options to see how it performs against the versions which have continual learning rate adjustments.
 
 ## Results
-The two models are essentially indistinguishable.
+With so much effort spent on troubleshooting the models to get them functioning and training smoothly, I was excited to examine the end results comparing the single- vs. multi-speaker systems. 
