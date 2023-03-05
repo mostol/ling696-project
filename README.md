@@ -16,6 +16,15 @@ From: python:3.9
     pip install https://github.com/mostol/TTS/archive/delightful-tts.zip
     pip install -f 'https://synesthesiam.github.io/prebuilt-apps/' gruut[nl]
 ```
+To create the image (which I named `coqui-tts.sif`), you can run:
+```shell
+singularity coqui-tts.sif modified.def
+```
+
+With the Singularity image created, the models can be trained with:
+```shell
+SINGULARITYENV_CUDA_VISIBLE_DEVICES=0 singularity exec --nv coqui-tts.sif python3 <scriptname.py>
+```
 
 ## Parameters and additional variations
 My training script was based of of an [existing DelightfulTTS recipe](https://github.com/coqui-ai/TTS/blob/delightful-tts/recipes/ljspeech/delightful_tts/train_delightful_tts.py) for the `ljspeech` dataset, with some modifications. Since my primary point of comparison was intended to be single- vs. multi-speaker setups, I tried to keep other parameters consistent between the two models and to select optimal configurations. Rather than using a character-based configuration, I used phonemes by taking advantage of `gruut`'s Dutch phoneme selection. This required installing an extension to the `gruut` package. My assumption was that using phonemes would allow the model to learn better speech generation more quickly by providing it a more unified speech representation—if the model uses phonemes, it doesn't have to learn to navigate the additinal variability that stems from trying to map orthography to pronunciation. For the dataset, I used the `validated.tsv` Common Voice data directly and leveraged Coqui's built-in `common_voice` dataset formatter for convenience and consistency. Finally, to ensure *ample* opportunity to produce the best model possible, I configured training to run for 100 epochs. Larger datsets often need fewer epochs—and in fact, these models converged and hit their maximum validation set performance well before they reached 100 epochs.
