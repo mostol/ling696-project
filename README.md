@@ -183,8 +183,8 @@ One persistent problem that soon cropped up was an out-of-memory error that appe
 ```diff
 delightful_tts_config = DelightfulTTSConfig(
     # ...
-+    batch_size=16, 
-+    eval_batch_size=16,
+-    batch_size=16, 
+-    eval_batch_size=16,
 +    batch_size=8, 
 +    eval_batch_size=8,
     # ...
