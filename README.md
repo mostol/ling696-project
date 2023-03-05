@@ -176,9 +176,24 @@ trainer = Trainer(
     eval_samples=eval_samples,
 )
 ```
+With these settings, I was able to begin training runs without any immediate issues or errors. However, I ran into a few obstacles that led me to experiment with new model variations in hopes of achieveing better performance.
+
+### Batch size impact
+One persistent problem that soon cropped up was an out-of-memory error that appeared after a few epochs. This issue cut training short, so the models were likely not attaining the performance they could be if the error were overcome. The out-of-memory error was a CUDA error, which meant it had to do with the amount of data in the GPU at one time, but it also only appeared at the end of an epoch (but before the evaluation steps began). Given the nature and timing of the error, I concluded that, while the GPU could handle size 16 batches, these were at the very limit of its memory and attemptign to evaluate on additional size-16 batches pushed it over its capacities—so training would continue more smoothly if I lowered the batch size. I updated my configurations to use a batch size of 8, and was able to train much more successfully:
+```diff
+delightful_tts_config = DelightfulTTSConfig(
+    # ...
++    batch_size=16, 
++    eval_batch_size=16,
++    batch_size=8, 
++    eval_batch_size=8,
+    # ...
+)
+```
+For comparison's sake, I've included some sample outputs from a model that failed training because of this error.
 
 ### Learning rate impact
-With the above settings applied, the models were ready to train. While monitoring their progress, however, I noticed a consistent issue: after a few epochs, the models' loss would reach `nan` and either fail to improve for the remainder of training or cause session-ending errors. After further investigation, I noticed that, while I had set the learning rate low enough to avoid instant failure, the learning rate seemed to stay fixed as the model trained. With a fixed learning rate, the models were unable to improve their loss past a certain point because they would "overshoot" the weight updates needed to reduce their loss, and this continual overcorrection would eventually accumulate and spiral out of control.
+With the above settings applied, the models were ready to fully. While monitoring their progress, however, I noticed a consistent issue: after a few epochs, the models' loss would reach `nan` and either fail to improve for the remainder of training or cause session-ending errors. After further investigation, I noticed that, while I had set the learning rate low enough to avoid instant failure, the learning rate seemed to stay fixed as the model trained. With a fixed learning rate, the models were unable to improve their loss past a certain point because they would "overshoot" the weight updates needed to reduce their loss, and this continual overcorrection would eventually accumulate and spiral out of control.
 
 Because of Coqui's default settings, this problem may not be seen in all cases. Coqui sets `scheduler_after_epoch` to `True` by default—this tells the trainer to update the learning rate *after each epoch*. An epoch is a single iteration over the entire dataset, so with smaller datasets, the learning rate will generally be adjusted before it becomes an issue. But when training on the entire Dutch Common Voice dataset (and with this particular combination of model architecture and training hardware) the distance between learning rate updates becomes long enough that the weight update step has the possibility of adjusting the weights to irrecoverably large or small values. Fortunately, this issue can be addressed by simply adjusting `scheduler_after_epoch` to `False`:
 ```diff
