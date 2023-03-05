@@ -1,6 +1,0 @@
-Bootstrap: docker
-From: python:3.9
-
-%post 
-    pip install https://github.com/coqui-ai/TTS/archive/delightful-tts.zip
-    pip install -f 'https://synesthesiam.github.io/prebuilt-apps/' gruut[nl]
