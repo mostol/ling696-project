@@ -115,7 +115,7 @@ delightful_tts_config = DelightfulTTSConfig(
 -    lr_gen=4e-1,
 -    lr=4e-1,
 -    lr_disc=4e-1,
-+    # These learning rates were *incredibly* high and would instanntly lead to vanishing gradients unless lowered.
++    # These learning rates were *incredibly* high and would instantly lead to vanishing gradients unless lowered.
 +    lr_gen=4e-4,
 +    lr=4e-4,
 +    lr_disc=4e-4,
